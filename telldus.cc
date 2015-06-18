@@ -65,51 +65,66 @@ namespace telldus_v8 {
 
   Local<Object> GetSupportedMethods(int id, int supportedMethods){
 
+	Isolate* isolate = Isolate::GetCurrent(); // returns NULL
+	if (!isolate) {
+		isolate = Isolate::New();
+		isolate->Enter();
+	}
+	
     Local<Array> methodsObj = Array::New(0);
 
     int i = 0;
 
-    if (supportedMethods & TELLSTICK_TURNON)  methodsObj->Set(i++, String::New("TURNON"));
-    if (supportedMethods & TELLSTICK_TURNOFF) methodsObj->Set(i++, String::New("TURNOFF"));
-    if (supportedMethods & TELLSTICK_BELL) methodsObj->Set(i++, String::New("BELL"));
-    if (supportedMethods & TELLSTICK_TOGGLE) methodsObj->Set(i++, String::New("TOGGLE"));
-    if (supportedMethods & TELLSTICK_DIM)  methodsObj->Set(i++, String::New("DIM"));
-    if (supportedMethods & TELLSTICK_UP) methodsObj->Set(i++, String::New("UP"));
-    if (supportedMethods & TELLSTICK_DOWN) methodsObj->Set(i++, String::New("DOWN"));
-    if (supportedMethods & TELLSTICK_STOP) methodsObj->Set(i++, String::New("STOP"));
-    if (supportedMethods & TELLSTICK_LEARN) methodsObj->Set(i++, String::New("LEARN"));
+    if (supportedMethods & TELLSTICK_TURNON)  methodsObj->Set(i++, v8::String::NewFromUtf8(isolate, "TURNON"));
+    if (supportedMethods & TELLSTICK_TURNOFF) methodsObj->Set(i++, v8::String::NewFromUtf8(isolate, "TURNOFF"));
+    if (supportedMethods & TELLSTICK_BELL) methodsObj->Set(i++, v8::String::NewFromUtf8(isolate, "BELL"));
+    if (supportedMethods & TELLSTICK_TOGGLE) methodsObj->Set(i++, v8::String::NewFromUtf8(isolate, "TOGGLE"));
+    if (supportedMethods & TELLSTICK_DIM)  methodsObj->Set(i++, v8::String::NewFromUtf8(isolate, "DIM"));
+    if (supportedMethods & TELLSTICK_UP) methodsObj->Set(i++, v8::String::NewFromUtf8(isolate, "UP"));
+    if (supportedMethods & TELLSTICK_DOWN) methodsObj->Set(i++, v8::String::NewFromUtf8(isolate, "DOWN"));
+    if (supportedMethods & TELLSTICK_STOP) methodsObj->Set(i++, v8::String::NewFromUtf8(isolate, "STOP"));
+    if (supportedMethods & TELLSTICK_LEARN) methodsObj->Set(i++, v8::String::NewFromUtf8(isolate, "LEARN"));
 
     return methodsObj;
 
   }
 
   Local<String> GetDeviceType(int id, int type){
+	Isolate* isolate = Isolate::GetCurrent(); // returns NULL
+	if (!isolate) {
+		isolate = Isolate::New();
+		isolate->Enter();
+	}
+	
+    if(type & TELLSTICK_TYPE_DEVICE) return v8::String::NewFromUtf8(isolate, "DEVICE");
+    if(type & TELLSTICK_TYPE_GROUP) return v8::String::NewFromUtf8(isolate, "GROUP");
+    if(type & TELLSTICK_TYPE_SCENE) return v8::String::NewFromUtf8(isolate, "SCENE");
 
-    if(type & TELLSTICK_TYPE_DEVICE) return String::New("DEVICE");
-    if(type & TELLSTICK_TYPE_GROUP) return String::New("GROUP");
-    if(type & TELLSTICK_TYPE_SCENE) return String::New("SCENE");
-
-    return String::New("UNKNOWN");
+    return v8::String::NewFromUtf8(isolate, "UNKNOWN");
 
   }
 
   Local<Object> GetDeviceStatus(int id, int lastSentCommand, int level){
-
+	Isolate* isolate = Isolate::GetCurrent(); // returns NULL
+	if (!isolate) {
+		isolate = Isolate::New();
+		isolate->Enter();
+	}
     Local<Object> status = Object::New();
 
     switch(lastSentCommand) {
       case TELLSTICK_TURNON:
-        status->Set(String::NewSymbol("name"), String::New("ON"));
+        status->Set(String::NewSymbol("name"), v8::String::NewFromUtf8(isolate, "ON"));
         break;
       case TELLSTICK_TURNOFF:
-        status->Set(String::NewSymbol("name"), String::New("OFF"));
+        status->Set(String::NewSymbol("name"), v8::String::NewFromUtf8(isolate, "OFF"));
         break;
       case TELLSTICK_DIM:
-        status->Set(String::NewSymbol("name"), String::New("DIM"));
+        status->Set(String::NewSymbol("name"), v8::String::NewFromUtf8(isolate, "DIM"));
         status->Set(String::NewSymbol("level"), Number::New(level));
         break;
       default:
-        status->Set(String::NewSymbol("name"), String::New("UNNKOWN"));
+        status->Set(String::NewSymbol("name"), v8::String::NewFromUtf8(isolate, "UNNKOWN"));
     }
 
     return status;
@@ -117,13 +132,17 @@ namespace telldus_v8 {
   }
 
   Local<Object> GetDevice( telldusDeviceInternals deviceInternals ) {
-
+	Isolate* isolate = Isolate::GetCurrent(); // returns NULL
+	if (!isolate) {
+		isolate = Isolate::New();
+		isolate->Enter();
+	}
     Local<Object> obj = Object::New();
-    obj->Set(String::NewSymbol("name"), String::New(deviceInternals.name, strlen(deviceInternals.name)));
+    obj->Set(String::NewSymbol("name"), v8::String::NewFromUtf8(isolate, deviceInternals.name, strlen(deviceInternals.name)));
     obj->Set(String::NewSymbol("id"), Number::New(deviceInternals.id));
     obj->Set(String::NewSymbol("methods"), GetSupportedMethods(deviceInternals.id,deviceInternals.supportedMethods));
-    obj->Set(String::NewSymbol("model"), String::New(deviceInternals.model, strlen(deviceInternals.model)));
-    obj->Set(String::NewSymbol("protocol"), String::New(deviceInternals.protocol, strlen(deviceInternals.protocol)));
+    obj->Set(String::NewSymbol("model"), v8::String::NewFromUtf8(isolate, deviceInternals.model, strlen(deviceInternals.model)));
+    obj->Set(String::NewSymbol("protocol"), v8::String::NewFromUtf8(isolate, deviceInternals.protocol, strlen(deviceInternals.protocol)));
     obj->Set(String::NewSymbol("type"), GetDeviceType(deviceInternals.id,deviceInternals.deviceType));
     obj->Set(String::NewSymbol("status"), GetDeviceStatus(deviceInternals.id,deviceInternals.lastSentCommand,deviceInternals.level));
 
@@ -252,11 +271,15 @@ namespace telldus_v8 {
   }
 
   Handle<Value> addDeviceEventListener( const Arguments& args ) {
-
+	Isolate* isolate = Isolate::GetCurrent(); // returns NULL
+	if (!isolate) {
+		isolate = Isolate::New();
+		isolate->Enter();
+	}
     HandleScope scope;
 
     if (!args[0]->IsFunction()) {
-    return ThrowException(Exception::TypeError(String::New("Expected 1 argument: (function callback)")));
+    return ThrowException(Exception::TypeError(v8::String::NewFromUtf8(isolate, "Expected 1 argument: (function callback)")));
     }
 
     Persistent<Function> callback = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
@@ -269,17 +292,21 @@ namespace telldus_v8 {
   void SensorEventCallbackWorking(uv_work_t *req) { }
 
   void SensorEventCallbackAfter(uv_work_t *req, int status) {
-
+	Isolate* isolate = Isolate::GetCurrent(); // returns NULL
+	if (!isolate) {
+		isolate = Isolate::New();
+		isolate->Enter();
+	}
     HandleScope scope;
 
     SensorEventBaton *baton = static_cast<SensorEventBaton *>(req->data);
 
     Local<Value> args[] = {
       Number::New(baton->sensorId),
-      String::New(baton->model),
-      String::New(baton->protocol),
+      v8::String::NewFromUtf8(isolate, baton->model),
+      v8::String::NewFromUtf8(isolate, baton->protocol),
       Number::New(baton->dataType),
-      String::New(baton->value),
+      v8::String::NewFromUtf8(isolate, baton->value),
       Number::New(baton->ts)
     };
 
@@ -315,11 +342,15 @@ namespace telldus_v8 {
   }
 
   Handle<Value> addSensorEventListener( const Arguments& args ) {
-
+	Isolate* isolate = Isolate::GetCurrent(); // returns NULL
+	if (!isolate) {
+		isolate = Isolate::New();
+		isolate->Enter();
+	}
     HandleScope scope;
 
     if (!args[0]->IsFunction()) {
-    return ThrowException(Exception::TypeError(String::New("Expected 1 argument: (function callback)")));
+    return ThrowException(Exception::TypeError(v8::String::NewFromUtf8(isolate, "Expected 1 argument: (function callback)")));
     }
 
     Persistent<Function> callback = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
@@ -332,13 +363,17 @@ namespace telldus_v8 {
   void RawDataEventCallbackWorking(uv_work_t *req) { }
 
   void RawDataEventCallbackAfter(uv_work_t *req, int status) {
-
+	Isolate* isolate = Isolate::GetCurrent(); // returns NULL
+	if (!isolate) {
+		isolate = Isolate::New();
+		isolate->Enter();
+	}
     HandleScope scope;
     RawDeviceEventBaton *baton = static_cast<RawDeviceEventBaton *>(req->data);
 
     Local<Value> args[] = {
       Number::New(baton->controllerId),
-      String::New(baton->data),
+      v8::String::NewFromUtf8(isolate, baton->data),
     };
 
     baton->callback->Call(baton->callback, 2, args);
@@ -367,10 +402,14 @@ namespace telldus_v8 {
 
 
   Handle<Value> addRawDeviceEventListener( const Arguments& args ) {
-
+	Isolate* isolate = Isolate::GetCurrent(); // returns NULL
+	if (!isolate) {
+		isolate = Isolate::New();
+		isolate->Enter();
+	}
     HandleScope scope;
     if (!args[0]->IsFunction()) {
-      return ThrowException(Exception::TypeError(String::New("Expected 1 argument: (function callback)")));
+      return ThrowException(Exception::TypeError(v8::String::NewFromUtf8(isolate, "Expected 1 argument: (function callback)")));
     }
 
     Persistent<Function> callback = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
@@ -496,7 +535,11 @@ namespace telldus_v8 {
   }
 
   void RunCallback(uv_work_t* req, int status) {
-
+	Isolate* isolate = Isolate::GetCurrent(); // returns NULL
+	if (!isolate) {
+		isolate = Isolate::New();
+		isolate->Enter();
+	}
     js_work* work = static_cast<js_work*>(req->data);
     work->string_used = false;
 
@@ -554,7 +597,7 @@ namespace telldus_v8 {
       case 10:
       case 14:
       case 21:
-        argv[0] = String::New(work->rs); // Return string value
+        argv[0] = v8::String::NewFromUtf8(isolate, work->rs); // Return string value
         argv[1] = Integer::New(work->f); // Return callback function
 
         work->callback->Call(Context::GetCurrent()->Global(), 2, argv);
@@ -594,12 +637,16 @@ namespace telldus_v8 {
   }
 
   Handle<Value> AsyncCaller(const Arguments& args) {
-
+	Isolate* isolate = Isolate::GetCurrent(); // returns NULL
+	if (!isolate) {
+		isolate = Isolate::New();
+		isolate->Enter();
+	}
     HandleScope scope;
 
     // Make sure we don't get any funky data
     if(!args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsNumber() || !args[3]->IsString() || !args[4]->IsString()) {
-      return ThrowException(Exception::TypeError(String::New("Wrong arguments")));
+      return ThrowException(Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong arguments")));
     }
 
     // Make a deep copy of the string argument as we don't want 
@@ -622,7 +669,7 @@ namespace telldus_v8 {
 
     uv_queue_work(uv_default_loop(), &work->req, RunWork, (uv_after_work_cb)RunCallback);
 
-    Local<String> retstr = String::New("Running asynchronous process initializer");
+    Local<String> retstr = v8::String::NewFromUtf8(isolate, "Running asynchronous process initializer");
 
     return scope.Close(retstr);
 
@@ -630,13 +677,17 @@ namespace telldus_v8 {
 
 
   Handle<Value> SyncCaller(const Arguments& args) {
-
+	Isolate* isolate = Isolate::GetCurrent(); // returns NULL
+	if (!isolate) {
+		isolate = Isolate::New();
+		isolate->Enter();
+	}
     // Start a new scope
     HandleScope scope;
 
     // Make sure we don't get any funky data
     if(!args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsNumber() || !args[3]->IsString() || !args[4]->IsString()) {
-       return ThrowException(Exception::TypeError(String::New("Wrong arguments")));
+       return ThrowException(Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong arguments")));
     }
 
     // Make a deep copy of the string argument
@@ -787,7 +838,7 @@ namespace telldus_v8 {
       case 10:
       case 14:
       case 21:
-        argv = String::New(work->rs); // Return string value
+        argv = v8::String::NewFromUtf8(isolate, work->rs); // Return string value
         break;
 
       // Return list<telldusDeviceInternals>
@@ -814,7 +865,11 @@ namespace telldus_v8 {
 
 extern "C"
 void init(Handle<Object> target) {
-
+	Isolate* isolate = Isolate::GetCurrent(); // returns NULL
+	if (!isolate) {
+		isolate = Isolate::New();
+		isolate->Enter();
+	}
   HandleScope scope;
 
   // Asynchronous function wrapper
