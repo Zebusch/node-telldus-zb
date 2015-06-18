@@ -65,7 +65,7 @@ namespace telldus_v8 {
 
   Local<Object> GetSupportedMethods(int id, int supportedMethods){
 
-    Local<Array> methodsObj = Array::New();
+    Local<Array> methodsObj = Array::New(0);
 
     int i = 0;
 
