@@ -1,4 +1,4 @@
-var telldus = require('./build/Release/telldus');
+var telldus = require('./build/Release/telldus-mod');
 var errors = require('./lib/errors');
 
 var statusEnum = {

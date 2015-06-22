@@ -1,8 +1,8 @@
 {
   "targets": [
     {
-    "target_name": "telldus",
-    "sources": [ "telldus.cc" ],
+    "target_name": "telldus-mod",
+    "sources": [ "telldus-mod.cc" ],
     "conditions": [
         ['OS=="mac"', {
             'include_dirs': [
