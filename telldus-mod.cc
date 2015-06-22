@@ -96,11 +96,11 @@ namespace telldus_v8 {
 		int i;
 
 		for (i = 0; i < 4; i++)
-			obs[i].setX(i, std::string("Text when id = " + std::to_string(i)));
+		obs[i].setX(i, std::string("Text when id = " + std::to_string(i)));
 
 		for (i = 0; i < 4; i++){
-			cout << "obs[" << i << "].getValue(): " << obs[i].getValue() << "\n";
-			cout << "obs[" << i << "].getName(): " << obs[i].name << "\n";
+		cout << "obs[" << i << "].getValue(): " << obs[i].getValue() << "\n";
+		cout << "obs[" << i << "].getName(): " << obs[i].name << "\n";
 		}*/
 
 		for (int i = 0; i < intNumberOfDevices; i++) {
@@ -115,39 +115,25 @@ namespace telldus_v8 {
 
 	typedef void(CALLBACK * PFNMYCALLBACK)(int, int);
 
-	int DaBomb(void *callbackVoid){
-
-		Function *r = (Function *)callbackVoid;
-		
-		Isolate* isolate = Isolate::GetCurrent();		
-		const unsigned argc = 2;
-		Local<Value> argv[argc] = { Null(isolate), String::NewFromUtf8(isolate, "success from the callback") };
-		
-		r->Call(isolate->GetCurrentContext()->Global(), argc, argv);
-
-		/*printf("%s\n", "Hej hej");
-		callbackVoid(isolate->GetCurrentContext()->Global(), argc, argv);*/
+	int TestCallBackFunction(void *callbackVoid){
+		Isolate* isolate = Isolate::GetCurrent();
+		Function *localFunc = (Function *)callbackVoid;
+		const unsigned argc = 3;
+		Local<Value> argv[argc] = { String::NewFromUtf8(isolate, "value 1 from the callback"), String::NewFromUtf8(isolate, "value 2 from the callback"), String::NewFromUtf8(isolate, "value 3 from the callback") };
+		localFunc->Call(isolate->GetCurrentContext()->Global(), argc, argv);
 		return 225;
 	}
 
 	void RegisterSensorEvent(const v8::FunctionCallbackInfo<v8::Value>& args){
 		Isolate* isolate = Isolate::GetCurrent();
-
 		Persistent<Function> context;
 		context.Reset(isolate, args[0].As<Function>());
-		const unsigned argc = 2;
-		Local<Value> argv[argc] = { Null(isolate), String::NewFromUtf8(isolate, "success, not from callback") };
-
 		Local<Function> localFunc = Local<Function>::New(isolate, context);
 
-		localFunc->Call(isolate->GetCurrentContext()->Global(), argc, argv);
-
 		//Local<Number> num = Number::New(isolate, tdRegisterSensorEvent((TDSensorEvent)&SensorEventCallback, *localFunc));
-		Local<Number> num = Number::New(isolate, DaBomb(*localFunc));
+		Local<Number> num = Number::New(isolate, TestCallBackFunction(*localFunc));
 		args.GetReturnValue().Set(num);
 	}
-
-	
 
 	extern "C"
 		void init(Handle<Object> target) {
@@ -160,8 +146,6 @@ namespace telldus_v8 {
 
 		target->Set(v8::String::NewFromUtf8(isolate, "GetDevices"), FunctionTemplate::New(isolate, telldus_v8::GetDevices)->GetFunction());
 		target->Set(v8::String::NewFromUtf8(isolate, "AddSensorEventListener"), FunctionTemplate::New(isolate, telldus_v8::RegisterSensorEvent)->GetFunction());
-
-
 	}
 	NODE_MODULE(telldus, init)
 }
