@@ -8,7 +8,8 @@
 #include <uv.h>
 #include <node.h>
 #include <v8.h>
-
+#include <string>
+#include <iostream>
 #include <telldus-core.h>
 
 
@@ -28,6 +29,16 @@ namespace telldus_v8 {
 		int dataType;
 	};
 
+	class MyClass {
+
+	public:
+		int value;
+		std::string name;
+		void setX(int i, std::string x) { value = i; name = x; }
+		int getValue() { return value; }
+		std::string getName() { return name; }
+	};
+
 	void SensorEventCallbackWorking(uv_work_t *req) { }
 
 	void SensorEventCallbackAfter(uv_work_t *req, int status) {
@@ -36,12 +47,12 @@ namespace telldus_v8 {
 		SensorEventBaton *baton = static_cast<SensorEventBaton *>(req->data);
 
 		Local<Value> args[] = {
-			Number::New(isolate,baton->sensorId),
-			v8::String::NewFromUtf8(isolate, baton->model),
-			v8::String::NewFromUtf8(isolate, baton->protocol),
-			Number::New(isolate, baton->dataType),
-			v8::String::NewFromUtf8(isolate, baton->value),
-			Number::New(isolate, baton->ts)
+		Number::New(isolate,baton->sensorId),
+		v8::String::NewFromUtf8(isolate, baton->model),
+		v8::String::NewFromUtf8(isolate, baton->protocol),
+		Number::New(isolate, baton->dataType),
+		v8::String::NewFromUtf8(isolate, baton->value),
+		Number::New(isolate, baton->ts)
 		};
 
 		baton->callback->Call(baton->callback, 6, args);
@@ -60,11 +71,9 @@ namespace telldus_v8 {
 		Isolate* isolate = Isolate::GetCurrent();
 
 		SensorEventBaton *baton = new SensorEventBaton();
-		
-		/*Persistent<Function> callback;
-		callback.Reset(isolate, callbackVoid);*/
 
-		baton->callback = static_cast<Function *>(callbackVoid);
+
+		//baton->callback = Persistent<Function>::New(Handle<Function *>::Cast((void**)&callbackVoid));
 		baton->sensorId = sensorId;
 		baton->protocol = strdup(protocol);
 		baton->model = strdup(model);
@@ -80,24 +89,65 @@ namespace telldus_v8 {
 
 	void GetDevices(const v8::FunctionCallbackInfo<v8::Value>& info) {
 
+
+
 		int intNumberOfDevices = tdGetNumberOfDevices();
+		/*MyClass obs[4];
+		int i;
+
+		for (i = 0; i < 4; i++)
+			obs[i].setX(i, std::string("Text when id = " + std::to_string(i)));
+
+		for (i = 0; i < 4; i++){
+			cout << "obs[" << i << "].getValue(): " << obs[i].getValue() << "\n";
+			cout << "obs[" << i << "].getName(): " << obs[i].name << "\n";
+		}*/
+
 		for (int i = 0; i < intNumberOfDevices; i++) {
 			int id = tdGetDeviceId(i);
 			char *name = tdGetName(id);
+
 			//printf("%d\t%s\n", id, name);
 			tdReleaseString(name);
 		}
 		info.GetReturnValue().Set(intNumberOfDevices);
 	}
 
+	typedef void(CALLBACK * PFNMYCALLBACK)(int, int);
+
+	int DaBomb(void *callbackVoid){
+
+		Function *r = (Function *)callbackVoid;
+		
+		Isolate* isolate = Isolate::GetCurrent();		
+		const unsigned argc = 2;
+		Local<Value> argv[argc] = { Null(isolate), String::NewFromUtf8(isolate, "success from the callback") };
+		
+		r->Call(isolate->GetCurrentContext()->Global(), argc, argv);
+
+		/*printf("%s\n", "Hej hej");
+		callbackVoid(isolate->GetCurrentContext()->Global(), argc, argv);*/
+		return 225;
+	}
+
 	void RegisterSensorEvent(const v8::FunctionCallbackInfo<v8::Value>& args){
 		Isolate* isolate = Isolate::GetCurrent();
-		HandleScope scope(isolate);
 
-		Local<Function> cb = Local<Function>::Cast(args[0]);
-		Local<Number> num = Number::New(isolate, tdRegisterSensorEvent((TDSensorEvent)&SensorEventCallback, *cb));
+		Persistent<Function> context;
+		context.Reset(isolate, args[0].As<Function>());
+		const unsigned argc = 2;
+		Local<Value> argv[argc] = { Null(isolate), String::NewFromUtf8(isolate, "success, not from callback") };
+
+		Local<Function> localFunc = Local<Function>::New(isolate, context);
+
+		localFunc->Call(isolate->GetCurrentContext()->Global(), argc, argv);
+
+		//Local<Number> num = Number::New(isolate, tdRegisterSensorEvent((TDSensorEvent)&SensorEventCallback, *localFunc));
+		Local<Number> num = Number::New(isolate, DaBomb(*localFunc));
 		args.GetReturnValue().Set(num);
 	}
+
+	
 
 	extern "C"
 		void init(Handle<Object> target) {
