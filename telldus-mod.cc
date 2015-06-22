@@ -20,6 +20,7 @@ using namespace std;
 namespace telldus_v8 {
 
 	struct SensorEventBaton {
+		uv_work_t request;
 		Function *callback;
 		int sensorId;
 		char *model;
@@ -29,39 +30,35 @@ namespace telldus_v8 {
 		int dataType;
 	};
 
-	class MyClass {
-
-	public:
-		int value;
-		std::string name;
-		void setX(int i, std::string x) { value = i; name = x; }
-		int getValue() { return value; }
-		std::string getName() { return name; }
-	};
 
 	void SensorEventCallbackWorking(uv_work_t *req) { }
 
 	void SensorEventCallbackAfter(uv_work_t *req, int status) {
-		/*Isolate* isolate = Isolate::GetCurrent();
+
+		printf("Entering SensorEventCallbackAfter\n");
+		/*printf("req->data: %s", req);
+
+		Isolate* isolate = Isolate::GetCurrent();
 
 		SensorEventBaton *baton = static_cast<SensorEventBaton *>(req->data);
+	
 
 		Local<Value> args[] = {
-		Number::New(isolate,baton->sensorId),
-		v8::String::NewFromUtf8(isolate, baton->model),
-		v8::String::NewFromUtf8(isolate, baton->protocol),
-		Number::New(isolate, baton->dataType),
-		v8::String::NewFromUtf8(isolate, baton->value),
-		Number::New(isolate, baton->ts)
+			Number::New(isolate, baton->sensorId),
+			v8::String::NewFromUtf8(isolate, baton->model),
+			v8::String::NewFromUtf8(isolate, baton->protocol),
+			Number::New(isolate, baton->dataType),
+			v8::String::NewFromUtf8(isolate, baton->value),
+			Number::New(isolate, baton->ts)
 		};
 
-		baton->callback->Call(baton->callback, 6, args);
+		baton->callback->Call(isolate->GetCurrentContext()->Global(), 6, args);
 
 		free(baton->model);
 		free(baton->protocol);
 		free(baton->value);
-		delete baton;
-		delete req;*/
+		delete baton;*/
+		//delete req;
 
 	}
 
@@ -72,8 +69,6 @@ namespace telldus_v8 {
 
 		SensorEventBaton *baton = new SensorEventBaton();
 
-
-		//baton->callback = Persistent<Function>::New(Handle<Function *>::Cast((void**)&callbackVoid));
 		baton->callback = (Function *)callbackVoid;
 		baton->sensorId = sensorId;
 		baton->protocol = strdup(protocol);
@@ -84,8 +79,8 @@ namespace telldus_v8 {
 
 		uv_work_t* req = new uv_work_t;
 		req->data = baton;
-
-		uv_queue_work(uv_default_loop(), req, (uv_work_cb)SensorEventCallbackWorking, (uv_after_work_cb)SensorEventCallbackAfter);
+		printf("Entering SensorEventCallback\n");
+		uv_queue_work(uv_default_loop(), req, SensorEventCallbackWorking, SensorEventCallbackAfter);
 	}
 
 	void GetDevices(const v8::FunctionCallbackInfo<v8::Value>& info) {
@@ -114,8 +109,6 @@ namespace telldus_v8 {
 		info.GetReturnValue().Set(intNumberOfDevices);
 	}
 
-	typedef void(CALLBACK * PFNMYCALLBACK)(int, int);
-
 	int TestCallBackFunction(void *callbackVoid){
 		Isolate* isolate = Isolate::GetCurrent();
 		Function *localFunc = (Function *)callbackVoid;
@@ -131,8 +124,8 @@ namespace telldus_v8 {
 		context.Reset(isolate, args[0].As<Function>());
 		Local<Function> localFunc = Local<Function>::New(isolate, context);
 
-		//Local<Number> num = Number::New(isolate, tdRegisterSensorEvent((TDSensorEvent)&SensorEventCallback, *localFunc));
-		Local<Number> num = Number::New(isolate, TestCallBackFunction(*localFunc));
+		Local<Number> num = Number::New(isolate, tdRegisterSensorEvent((TDSensorEvent)&SensorEventCallback, *localFunc));
+		//Local<Number> num = Number::New(isolate, TestCallBackFunction(*localFunc));
 		args.GetReturnValue().Set(num);
 	}
 
