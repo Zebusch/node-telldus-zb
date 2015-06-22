@@ -20,7 +20,7 @@ using namespace std;
 namespace telldus_v8 {
 
 	struct SensorEventBaton {
-		Persistent<Function> callback;
+		Function *callback;
 		int sensorId;
 		char *model;
 		char *protocol;
@@ -74,6 +74,7 @@ namespace telldus_v8 {
 
 
 		//baton->callback = Persistent<Function>::New(Handle<Function *>::Cast((void**)&callbackVoid));
+		baton->callback = (Function *)callbackVoid;
 		baton->sensorId = sensorId;
 		baton->protocol = strdup(protocol);
 		baton->model = strdup(model);
