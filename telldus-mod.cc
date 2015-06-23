@@ -18,10 +18,15 @@ using namespace node;
 using namespace std;
 
 namespace telldus_v8 {
+	
+	struct EventContext {
+		v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> callback;
+	};
 
 	struct SensorEventBaton {
 		uv_work_t request;
 		Function *callback;
+		EventContext *eventContext;
 		int sensorId;
 		char *model;
 		char *protocol;
@@ -29,7 +34,7 @@ namespace telldus_v8 {
 		int ts;
 		int dataType;
 	};
-
+	
 
 	void SensorEventCallbackWorking(uv_work_t *req) { }
 
@@ -63,13 +68,16 @@ namespace telldus_v8 {
 	}
 
 	void SensorEventCallback(const char *protocol, const char *model, int sensorId, int dataType, const char *value,
-		int ts, int callbackId, void *callbackVoid) {
+		int ts, int callbackId, void *eventContext) {
 
 		Isolate* isolate = Isolate::GetCurrent();
 
+		EventContext *ctx = static_cast<EventContext *>(eventContext);
+
 		SensorEventBaton *baton = new SensorEventBaton();
 
-		baton->callback = (Function *)callbackVoid;
+		//baton->callback = (Function *)callbackVoid;
+		baton->eventContext = ctx;
 		baton->sensorId = sensorId;
 		baton->protocol = strdup(protocol);
 		baton->model = strdup(model);
@@ -120,11 +128,16 @@ namespace telldus_v8 {
 
 	void RegisterSensorEvent(const v8::FunctionCallbackInfo<v8::Value>& args){
 		Isolate* isolate = Isolate::GetCurrent();
-		Persistent<Function> context;
-		context.Reset(isolate, args[0].As<Function>());
-		Local<Function> localFunc = Local<Function>::New(isolate, context);
 
-		Local<Number> num = Number::New(isolate, tdRegisterSensorEvent((TDSensorEvent)&SensorEventCallback, *localFunc));
+
+		v8::Local<v8::Function> cb = v8::Local<v8::Function>::Cast(args[0]);
+		v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> value(isolate, cb);
+		
+
+		EventContext *eventContext = new EventContext();
+		eventContext->callback = value;
+
+		Local<Number> num = Number::New(isolate, tdRegisterSensorEvent((TDSensorEvent)&SensorEventCallback, eventContext));
 		//Local<Number> num = Number::New(isolate, TestCallBackFunction(*localFunc));
 		args.GetReturnValue().Set(num);
 	}

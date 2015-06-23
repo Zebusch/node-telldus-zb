@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 #include <windows.h>
+#include <telldus-core.h>
 
 using namespace v8;
 using namespace node;
@@ -14,31 +15,48 @@ using namespace std;
 
 namespace zebdus_v8 {
 
+	struct Baton {
+		uv_work_t request;
+		v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> callback;
+	};
+
+	struct EventContext {		
+		v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> callback;
+	};
+
 	void __sleep(uv_work_t* req) {
 		Sleep(1500);
 	}
 
 	void after(uv_work_t *req, int status) {
 		printf("After\n");
+		Isolate* isolate = Isolate::GetCurrent();	
 
-		Isolate* isolate = Isolate::GetCurrent();
-		Function *localFunc = (Function *)(req->data);
+		Baton *baton = static_cast<Baton *>(req->data);
+
+		v8::Local<v8::Function> dafunk = v8::Local<v8::Function>::New(isolate, ((v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>)baton->callback));
+
 		const unsigned argc = 3;
 		Local<Value> argv[argc] = { String::NewFromUtf8(isolate, "value 1 from the callback"), String::NewFromUtf8(isolate, "value 2 from the callback"), String::NewFromUtf8(isolate, "value 3 from the callback") };
-		&localFunc->Call(isolate->GetCurrentContext()->Global(), argc, argv);	
+		dafunk->Call(isolate->GetCurrentContext()->Global(), argc, argv);
+
+
 		printf("Leaving\n");
 	}
 
 	void fooMethod(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		Isolate* isolate = Isolate::GetCurrent();
-		Persistent<Function> context;
-		context.Reset(isolate, args[0].As<Function>());
-		Local<Function> localFunc = Local<Function>::New(isolate, context);
+
+		v8::Local<v8::Function> cb = v8::Local<v8::Function>::Cast(args[0]);
+		v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> value(isolate, cb);
+
+		Baton *baton = new Baton();
+		baton->request.data = baton;
+		baton->callback = value;
 
 		uv_work_t* req = new uv_work_t;
-		req->data = *localFunc;
-		uv_queue_work(uv_default_loop(), req, __sleep, after);
-		//return scope.Close(Undefined());
+		req->data = baton;		
+		uv_queue_work(uv_default_loop(), req, __sleep, after);		
 	}
 	extern "C"
 		void initAll(Handle<Object> target) {
