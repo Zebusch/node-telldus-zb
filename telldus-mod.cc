@@ -36,17 +36,19 @@ namespace telldus_v8 {
 	};
 	
 
-	void SensorEventCallbackWorking(uv_work_t *req) { }
+	void SensorEventCallbackWorking(uv_work_t *req) { 
+		printf("Entering SensorEventCallbackWorking\n");
+	}
 
 	void SensorEventCallbackAfter(uv_work_t *req, int status) {
 
 		printf("Entering SensorEventCallbackAfter\n");
-		/*printf("req->data: %s", req);
 
 		Isolate* isolate = Isolate::GetCurrent();
 
 		SensorEventBaton *baton = static_cast<SensorEventBaton *>(req->data);
-	
+		EventContext *ctx = static_cast<EventContext *>(baton->eventContext);
+		v8::Local<v8::Function> dafunk = v8::Local<v8::Function>::New(isolate, ((v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>)ctx->callback));
 
 		Local<Value> args[] = {
 			Number::New(isolate, baton->sensorId),
@@ -57,27 +59,42 @@ namespace telldus_v8 {
 			Number::New(isolate, baton->ts)
 		};
 
-		baton->callback->Call(isolate->GetCurrentContext()->Global(), 6, args);
+		dafunk->Call(isolate->GetCurrentContext()->Global(), 6, args);
 
 		free(baton->model);
 		free(baton->protocol);
 		free(baton->value);
-		delete baton;*/
-		//delete req;
+		delete baton;
+		delete ctx;
+		delete req;
 
 	}
 
 	void SensorEventCallback(const char *protocol, const char *model, int sensorId, int dataType, const char *value,
-		int ts, int callbackId, void *eventContext) {
+		int ts, int callbackId, void *callbackVoid) {
+
+		
 
 		Isolate* isolate = Isolate::GetCurrent();
+		printf("Before cast in SensorEventCallback\n");
+		EventContext *ctx = static_cast<EventContext *>(callbackVoid);
 
-		EventContext *ctx = static_cast<EventContext *>(eventContext);
+		printf("SensorEventCallback.*callbackVoid: %s\n", ctx);
+		printf("RegisterSensorEvent.*callbackVoid.callback: %s\n", ctx->callback);
 
+		printf("Before func in SensorEventCallback\n");
+		v8::Local<v8::Function> dafunk = v8::Local<v8::Function>::New(isolate, ((v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>)ctx->callback));
+		printf("Before args in SensorEventCallback\n");
+		const unsigned argc = 3;
+		Local<Value> argv[argc] = { String::NewFromUtf8(isolate, "value 1 from the callback"), String::NewFromUtf8(isolate, "value 2 from the callback"), String::NewFromUtf8(isolate, "value 3 from the callback") };
+		printf("Before call in SensorEventCallback\n");
+		dafunk->Call(isolate->GetCurrentContext()->Global(), argc, argv);
+
+
+		//EventContext *ctx = static_cast<EventContext *>(eventContext);
 		SensorEventBaton *baton = new SensorEventBaton();
 
-		//baton->callback = (Function *)callbackVoid;
-		baton->eventContext = ctx;
+		//baton->eventContext = ctx;
 		baton->sensorId = sensorId;
 		baton->protocol = strdup(protocol);
 		baton->model = strdup(model);
@@ -87,8 +104,9 @@ namespace telldus_v8 {
 
 		uv_work_t* req = new uv_work_t;
 		req->data = baton;
+
 		printf("Entering SensorEventCallback\n");
-		uv_queue_work(uv_default_loop(), req, SensorEventCallbackWorking, SensorEventCallbackAfter);
+		uv_queue_work(uv_default_loop(), req, (uv_work_cb)SensorEventCallbackWorking, (uv_after_work_cb)SensorEventCallbackAfter);
 	}
 
 	void GetDevices(const v8::FunctionCallbackInfo<v8::Value>& info) {
@@ -119,26 +137,27 @@ namespace telldus_v8 {
 
 	int TestCallBackFunction(void *callbackVoid){
 		Isolate* isolate = Isolate::GetCurrent();
-		Function *localFunc = (Function *)callbackVoid;
+		EventContext *ctx = static_cast<EventContext *>(callbackVoid);
+		v8::Local<v8::Function> dafunk = v8::Local<v8::Function>::New(isolate, ((v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>)ctx->callback));
 		const unsigned argc = 3;
 		Local<Value> argv[argc] = { String::NewFromUtf8(isolate, "value 1 from the callback"), String::NewFromUtf8(isolate, "value 2 from the callback"), String::NewFromUtf8(isolate, "value 3 from the callback") };
-		localFunc->Call(isolate->GetCurrentContext()->Global(), argc, argv);
+		dafunk->Call(isolate->GetCurrentContext()->Global(), argc, argv);
 		return 225;
 	}
 
 	void RegisterSensorEvent(const v8::FunctionCallbackInfo<v8::Value>& args){
 		Isolate* isolate = Isolate::GetCurrent();
 
-
 		v8::Local<v8::Function> cb = v8::Local<v8::Function>::Cast(args[0]);
 		v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> value(isolate, cb);
-		
 
-		EventContext *eventContext = new EventContext();
-		eventContext->callback = value;
+		EventContext *ctx = new EventContext();
+		ctx->callback = value;
+		printf("RegisterSensorEvent.*callbackVoid: %s\n", ctx);
+		printf("RegisterSensorEvent.*callbackVoid.callback: %s\n", ctx->callback);
 
-		Local<Number> num = Number::New(isolate, tdRegisterSensorEvent((TDSensorEvent)&SensorEventCallback, eventContext));
-		//Local<Number> num = Number::New(isolate, TestCallBackFunction(*localFunc));
+		//Local<Number> num = Number::New(isolate, tdRegisterSensorEvent((TDSensorEvent)&SensorEventCallback, ctx));
+		Local<Number> num = Number::New(isolate, TestCallBackFunction(ctx));
 		args.GetReturnValue().Set(num);
 	}
 

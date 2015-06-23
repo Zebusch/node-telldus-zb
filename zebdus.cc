@@ -17,16 +17,16 @@ using namespace std;
 
 namespace zebdus_v8 {
 
-	struct Baton {
-		uv_work_t request;
-		v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> callback;
-		int sleepTime;
-		int id;
-	};
-
 	struct EventContext {
 		v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> callback;
 	};
+
+	struct Baton {
+		uv_work_t request;
+		EventContext *eventContext;
+		int sleepTime;
+		int id;
+	};	
 
 	void __sleep(uv_work_t* req) {
 		Baton *baton = static_cast<Baton *>(req->data);
@@ -39,8 +39,9 @@ namespace zebdus_v8 {
 		Isolate* isolate = Isolate::GetCurrent();
 
 		Baton *baton = static_cast<Baton *>(req->data);
+		EventContext *ctx = static_cast<EventContext *>(baton->eventContext);
 
-		v8::Local<v8::Function> dafunk = v8::Local<v8::Function>::New(isolate, ((v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>)baton->callback));
+		v8::Local<v8::Function> dafunk = v8::Local<v8::Function>::New(isolate, ((v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>)ctx->callback));
 		
 		const unsigned argc = 3;
 		Local<Value> argv[argc] = { v8::Integer::New(isolate, baton->id), v8::Integer::New(isolate, baton->sleepTime), String::NewFromUtf8(isolate, "value 3 from the callback") };
@@ -57,6 +58,9 @@ namespace zebdus_v8 {
 		v8::Local<v8::Function> cb = v8::Local<v8::Function>::Cast(args[0]);
 		v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> value(isolate, cb);
 		
+		EventContext *ctx = new EventContext();
+		ctx->callback = value;
+
 		int min = 1500;
 		int max = 10000;
 
@@ -64,7 +68,7 @@ namespace zebdus_v8 {
 
 			Baton *baton = new Baton();
 			baton->request.data = baton;
-			baton->callback = value;
+			baton->eventContext = ctx;
 			baton->sleepTime = (min + (rand() % (int)(max - min + 1)));
 			baton->id = i;
 
