@@ -13,7 +13,7 @@ var telldus = require('./build/Release/telldus-mod');
 //console.log(telldus.GetDevices());
 
 var test = telldus.fooMethod(function (args, test, test2) {
-    console.log("This is callback in JS: " + args);
+    console.log("This is callback in JS: " + args+" - slept for "+test+" miliseconds.");
     //console.log("This is callback in JS: " + test);
     //console.log("This is callback in JS: " + test2);
 });

@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <telldus-core.h>
 #include <sstream>
+#include <ctime>
 
 using namespace v8;
 using namespace node;
@@ -42,23 +43,29 @@ namespace zebdus_v8 {
 		v8::Local<v8::Function> dafunk = v8::Local<v8::Function>::New(isolate, ((v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>)baton->callback));
 		
 		const unsigned argc = 3;
-		Local<Value> argv[argc] = { v8::Integer::New(isolate, baton->id), String::NewFromUtf8(isolate, "value 2 from the callback"), String::NewFromUtf8(isolate, "value 3 from the callback") };
+		Local<Value> argv[argc] = { v8::Integer::New(isolate, baton->id), v8::Integer::New(isolate, baton->sleepTime), String::NewFromUtf8(isolate, "value 3 from the callback") };
 		dafunk->Call(isolate->GetCurrentContext()->Global(), argc, argv);
-
+		delete baton;
+		delete req;
 
 		//printf("Leaving\n");
 	}
 
 	void fooMethod(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		Isolate* isolate = Isolate::GetCurrent();
-		for (int i = 0; i < 5; i++){
-			v8::Local<v8::Function> cb = v8::Local<v8::Function>::Cast(args[0]);
-			v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> value(isolate, cb);
+		srand(time(NULL));
+		v8::Local<v8::Function> cb = v8::Local<v8::Function>::Cast(args[0]);
+		v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> value(isolate, cb);
+		
+		int min = 1500;
+		int max = 10000;
+
+		for (int i = 0; i < 4; i++){	
 
 			Baton *baton = new Baton();
 			baton->request.data = baton;
 			baton->callback = value;
-			baton->sleepTime = ((rand() % 10000 + 2000));
+			baton->sleepTime = (min + (rand() % (int)(max - min + 1)));
 			baton->id = i;
 
 			uv_work_t* req = new uv_work_t;
