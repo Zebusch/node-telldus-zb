@@ -14,8 +14,8 @@ var telldus = require('./build/Release/telldus-mod');
 
 var test = telldus.fooMethod(function (args, test, test2) {
     console.log("This is callback in JS: " + args);
-    console.log("This is callback in JS: " + test);
-    console.log("This is callback in JS: " + test2);
+    //console.log("This is callback in JS: " + test);
+    //console.log("This is callback in JS: " + test2);
 });
 
 //var registeredEventId = telldus.AddSensorEventListener(function (args, test, test2) {
