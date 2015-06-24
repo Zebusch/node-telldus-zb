@@ -64,7 +64,7 @@ namespace zebdus_v8 {
 		int min = 1500;
 		int max = 10000;
 
-		for (int i = 0; i < 4; i++){	
+		for (int i = 0; i < 40; i++){	
 
 			Baton *baton = new Baton();
 			baton->request.data = baton;
