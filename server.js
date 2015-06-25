@@ -12,15 +12,15 @@ var port = process.env.PORT || 3000;
 var telldus = require('./build/debug/telldus-mod');
 //console.log(telldus.GetDevices());
 
-//var test = telldus.fooMethod(function (args, test, test2) {
-//    console.log("This is callback in JS: " + args+" - slept for "+test+" miliseconds.");
-//    //console.log("This is callback in JS: " + test);
-//    //console.log("This is callback in JS: " + test2);
-//});
-
-var registeredEventId = telldus.AddSensorEventListener(function (args) {
-    console.log("This is value from callback: " + args);
+var test = telldus.fooMethod(function (args, test, test2) {
+   console.log("this is callback in js: " + args+" - slept for "+test+" miliseconds.");
+   //console.log("this is callback in js: " + test);
+   //console.log("this is callback in js: " + test2);
 });
+
+//var registeredEventId = telldus.AddSensorEventListener(function (args) {
+//    console.log("This is value from callback: " + args);
+//});
 
 
 //console.log("helloooooo: " + registeredEventId);

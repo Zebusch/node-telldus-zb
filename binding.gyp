@@ -2,8 +2,8 @@
   "targets": [
     {
     "target_name": "telldus-mod",
-    "sources": [  		
-		"telldus-mod.cc" 
+    "sources": [
+		"zebdus.cc"
 		],
     "conditions": [
         ['OS=="mac"', {

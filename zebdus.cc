@@ -26,7 +26,7 @@ namespace zebdus_v8 {
 		EventContext *eventContext;
 		int sleepTime;
 		int id;
-	};	
+	};
 
 	void __sleep(uv_work_t* req) {
 		Baton *baton = static_cast<Baton *>(req->data);
@@ -42,7 +42,7 @@ namespace zebdus_v8 {
 		EventContext *ctx = static_cast<EventContext *>(baton->eventContext);
 
 		v8::Local<v8::Function> dafunk = v8::Local<v8::Function>::New(isolate, ((v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>)ctx->callback));
-		
+
 		const unsigned argc = 3;
 		Local<Value> argv[argc] = { v8::Integer::New(isolate, baton->id), v8::Integer::New(isolate, baton->sleepTime), String::NewFromUtf8(isolate, "value 3 from the callback") };
 		dafunk->Call(isolate->GetCurrentContext()->Global(), argc, argv);
@@ -57,14 +57,14 @@ namespace zebdus_v8 {
 		srand(time(NULL));
 		v8::Local<v8::Function> cb = v8::Local<v8::Function>::Cast(args[0]);
 		v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> value(isolate, cb);
-		
+
 		EventContext *ctx = new EventContext();
 		ctx->callback = value;
 
 		int min = 1500;
 		int max = 10000;
 
-		for (int i = 0; i < 40; i++){	
+		for (int i = 0; i < 40; i++){
 
 			Baton *baton = new Baton();
 			baton->request.data = baton;
@@ -92,4 +92,3 @@ namespace zebdus_v8 {
 	}
 	NODE_MODULE(zebdus, initAll)
 }
-
