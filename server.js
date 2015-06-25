@@ -4,18 +4,23 @@ var express = require('express');
 var fs = require('fs');
 var http = require('http');
 var bodyParser = require('body-parser');
+var moment = require('moment');
 var app = express();
 
 var port = process.env.PORT || 3000;
 
 
-var telldus = require('./build/Release/telldus-mod');
+var telldus = require('./build/debug/telldus-mod');
 //console.log(telldus.GetDevices());
 
-var test = telldus.fooMethod(function (args, test, test2) {
-    console.log("This is callback in JS: " + args+" - slept for "+test+" miliseconds.");
-    //console.log("This is callback in JS: " + test);
-    //console.log("This is callback in JS: " + test2);
+var test = telldus.AddSensorEventListener(function (sensorId, model, protocol,dataType,value,ts) {
+    console.log("sensorId: " + sensorId);
+    console.log("model: " + model);
+    console.log("protocol: " + protocol);
+    console.log("dataType: " + dataType);
+    console.log("value: " + value);
+    console.log("TimeStamp: " + new moment.unix(ts).format());
+    console.log("");
 });
 
 //var registeredEventId = telldus.AddSensorEventListener(function (args, test, test2) {

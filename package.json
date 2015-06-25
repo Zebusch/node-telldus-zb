@@ -22,12 +22,12 @@
     "install": "node-gyp configure build",
     "test": "mocha --reporter spec"
   },
-    "os": [
-        "darwin",
-        "linux",
-        "win32"
-    ],
-      "dependencies": {
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "dependencies": {
     "body-parser": "^1.13.1",
     "express": "^4.12.4",
     "moment": "^2.10.3",

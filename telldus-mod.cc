@@ -109,42 +109,6 @@ namespace telldus_v8 {
 		uv_queue_work(uv_default_loop(), req, (uv_work_cb)SensorEventCallbackWorking, (uv_after_work_cb)SensorEventCallbackAfter);
 	}
 
-	void GetDevices(const v8::FunctionCallbackInfo<v8::Value>& info) {
-
-
-
-		int intNumberOfDevices = tdGetNumberOfDevices();
-		/*MyClass obs[4];
-		int i;
-
-		for (i = 0; i < 4; i++)
-		obs[i].setX(i, std::string("Text when id = " + std::to_string(i)));
-
-		for (i = 0; i < 4; i++){
-		cout << "obs[" << i << "].getValue(): " << obs[i].getValue() << "\n";
-		cout << "obs[" << i << "].getName(): " << obs[i].name << "\n";
-		}*/
-
-		for (int i = 0; i < intNumberOfDevices; i++) {
-			int id = tdGetDeviceId(i);
-			char *name = tdGetName(id);
-
-			//printf("%d\t%s\n", id, name);
-			tdReleaseString(name);
-		}
-		info.GetReturnValue().Set(intNumberOfDevices);
-	}
-
-	int TestCallBackFunction(void *callbackVoid){
-		Isolate* isolate = Isolate::GetCurrent();
-		EventContext *ctx = static_cast<EventContext *>(callbackVoid);
-		v8::Local<v8::Function> dafunk = v8::Local<v8::Function>::New(isolate, ((v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>)ctx->callback));
-		const unsigned argc = 3;
-		Local<Value> argv[argc] = { String::NewFromUtf8(isolate, "value 1 from the callback"), String::NewFromUtf8(isolate, "value 2 from the callback"), String::NewFromUtf8(isolate, "value 3 from the callback") };
-		dafunk->Call(isolate->GetCurrentContext()->Global(), argc, argv);
-		return 225;
-	}
-
 	void RegisterSensorEvent(const v8::FunctionCallbackInfo<v8::Value>& args){
 		Isolate* isolate = Isolate::GetCurrent();
 

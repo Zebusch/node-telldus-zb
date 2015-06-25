@@ -21,63 +21,79 @@ namespace zebdus_v8 {
 		v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> callback;
 	};
 
-	struct Baton {
+	struct SensorEventBaton {
 		uv_work_t request;
+		Function *callback;
 		EventContext *eventContext;
-		int sleepTime;
-		int id;
-	};	
+		int sensorId;
+		char *model;
+		char *protocol;
+		char *value;
+		int ts;
+		int dataType;
+	};
 
-	void __sleep(uv_work_t* req) {
-		Baton *baton = static_cast<Baton *>(req->data);
-		printf("Thread with id %d Sleeping for %d ms...\n", baton->id, baton->sleepTime);
-		Sleep(baton->sleepTime);
+
+	void SensorEventCallbackWorking(uv_work_t *req) {
 	}
 
-	void after(uv_work_t *req, int status) {
-		//printf("After\n");
+	void SensorEventCallbackAfter(uv_work_t *req, int status) {
 		Isolate* isolate = Isolate::GetCurrent();
 
-		Baton *baton = static_cast<Baton *>(req->data);
+		SensorEventBaton *baton = static_cast<SensorEventBaton *>(req->data);
 		EventContext *ctx = static_cast<EventContext *>(baton->eventContext);
-
 		v8::Local<v8::Function> dafunk = v8::Local<v8::Function>::New(isolate, ((v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>)ctx->callback));
-		
-		const unsigned argc = 3;
-		Local<Value> argv[argc] = { v8::Integer::New(isolate, baton->id), v8::Integer::New(isolate, baton->sleepTime), String::NewFromUtf8(isolate, "value 3 from the callback") };
-		dafunk->Call(isolate->GetCurrentContext()->Global(), argc, argv);
+
+		Local<Value> args[] = {
+			Number::New(isolate, baton->sensorId),
+			v8::String::NewFromUtf8(isolate, baton->model),
+			v8::String::NewFromUtf8(isolate, baton->protocol),
+			Number::New(isolate, baton->dataType),
+			v8::String::NewFromUtf8(isolate, baton->value),
+			Number::New(isolate, baton->ts)
+		};
+
+		dafunk->Call(isolate->GetCurrentContext()->Global(), 6, args);
+
+		free(baton->model);
+		free(baton->protocol);
+		free(baton->value);
+		//delete ctx;
 		delete baton;
 		delete req;
-
-		//printf("Leaving\n");
 	}
 
-	void fooMethod(const v8::FunctionCallbackInfo<v8::Value>& args) {
+	void SensorEventCallback(const char *protocol, const char *model, int sensorId, int dataType, const char *value,
+		int ts, int callbackId, void *callbackVoid) {
+
+		EventContext *ctx = static_cast<EventContext *>(callbackVoid);
+		SensorEventBaton *baton = new SensorEventBaton();
+
+		baton->eventContext = ctx;
+		baton->sensorId = sensorId;
+		baton->protocol = strdup(protocol);
+		baton->model = strdup(model);
+		baton->ts = ts;
+		baton->dataType = dataType;
+		baton->value = strdup(value);
+
+		uv_work_t* req = new uv_work_t;
+		req->data = baton;
+
+		uv_queue_work(uv_default_loop(), req, (uv_work_cb)SensorEventCallbackWorking, (uv_after_work_cb)SensorEventCallbackAfter);
+	}
+
+	void RegisterSensorEvent(const v8::FunctionCallbackInfo<v8::Value>& args){
 		Isolate* isolate = Isolate::GetCurrent();
-		srand(time(NULL));
+
 		v8::Local<v8::Function> cb = v8::Local<v8::Function>::Cast(args[0]);
 		v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>> value(isolate, cb);
-		
+
 		EventContext *ctx = new EventContext();
 		ctx->callback = value;
 
-		int min = 1500;
-		int max = 10000;
-
-		for (int i = 0; i < 4; i++){	
-
-			Baton *baton = new Baton();
-			baton->request.data = baton;
-			baton->eventContext = ctx;
-			baton->sleepTime = (min + (rand() % (int)(max - min + 1)));
-			baton->id = i;
-
-			uv_work_t* req = new uv_work_t;
-			req->data = baton;
-
-			uv_queue_work(uv_default_loop(), req, __sleep, after);
-		}
-
+		Local<Number> num = Number::New(isolate, tdRegisterSensorEvent((TDSensorEvent)&SensorEventCallback, ctx));
+		args.GetReturnValue().Set(num);
 	}
 	extern "C"
 		void initAll(Handle<Object> target) {
@@ -87,8 +103,7 @@ namespace zebdus_v8 {
 			isolate = Isolate::New();
 			isolate->Enter();
 		}
-
-		target->Set(v8::String::NewFromUtf8(isolate, "fooMethod"), FunctionTemplate::New(isolate, zebdus_v8::fooMethod)->GetFunction());
+		target->Set(v8::String::NewFromUtf8(isolate, "AddSensorEventListener"), FunctionTemplate::New(isolate, zebdus_v8::RegisterSensorEvent)->GetFunction());
 	}
 	NODE_MODULE(zebdus, initAll)
 }

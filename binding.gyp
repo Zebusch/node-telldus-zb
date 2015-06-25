@@ -33,18 +33,18 @@
               'C:\\Program\\Telldus\\Development\\',
               'C:\\Program Files\\Telldus\\Development\\',
               'C:\\Program Files (x86)\\Telldus\\Development\\',
-			  'C:\\Program Files (x86)\\Telldus\\Development\\i386\\',
+			  'C:\\Program Files (x86)\\Telldus\\Development\\x86_64\\',
 			  'C:\Program Files (x86)\Telldus\Development',
-			  'C:\Program Files (x86)\Telldus\Development\i386'
+			  'C:\Program Files (x86)\Telldus\Development\x86_64'
             ]
           },
           'include_dirs': [
             'C:\\Program\\Telldus\\Development\\',
             'C:\\Program Files\\Telldus\\Development\\',
             'C:\\Program Files (x86)\\Telldus\\Development\\'
-			'C:\\Program Files (x86)\\Telldus\\Development\\i386\\',
+			'C:\\Program Files (x86)\\Telldus\\Development\\x86_64\\',
 			'C:\Program Files (x86)\Telldus\Development',
-			'C:\Program Files (x86)\Telldus\Development\i386'
+			'C:\Program Files (x86)\Telldus\Development\x86_64'
           ]
         }]
       ]
